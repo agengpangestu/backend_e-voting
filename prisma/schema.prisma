@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int                    @id @default(autoincrement())
+  username             String?                @unique
+  password             String?
+  email                String?                @unique
+  role                 Role                   @default(PEMILIH)
+  fullName             String
+  age                  Int?
+  ifVoted              Boolean                @default(false)
+  identityNumber       Int?                   @unique //kartu ktp, organisasi, pelajar
+  identityPicture      String? //wajib upload foto ktp, organisasi, pelajar
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  Candidate            Candidate[]
+  Election_Schedulling Election_Schedulling[]
+  Vote                 Vote? //relasi tabel Vote
+  identity_verify      Identity_Verif?
+}
+
+model Candidate {
+  candidateID     Int                   @id @default(autoincrement())
+  candidateName   String
+  candidateVisi   String?
+  candidateMisi   String?
+  candidateAvatar String?
+  candidateRole   CandidateRole
+  electionID      Int?
+  group           String? //NAMA partai
+  level           Level
+  User            User?                 @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdBy       Int?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  // Vote            Vote[] //relasi tabel Vote
+  Election        Election_Schedulling? @relation(fields: [electionID], references: [electionID], onDelete: SetNull)
+  result_votes    Int                   @default(0)
+  voteKetua       Vote[]                @relation("VoteKetua")
+  voteWakilKetua  Vote[]                @relation("VoteWakilKetua")
+}
+
+model Election_Schedulling {
+  electionID   Int         @id @default(autoincrement())
+  electionName String
+  electionDesc String?
+  status       Status
+  User         User        @relation(fields: [createdBy], references: [id])
+  createdBy    Int
+  startedAt    DateTime
+  endedAt      DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  Vote         Vote[]
+  Candidate    Candidate[]
+}
+
+model Vote {
+  voteID           Int                  @id @default(autoincrement())
+  userID           Int                  @unique
+  // candidateID      Int
+  electionID       Int
+  User             User                 @relation(fields: [userID], references: [id], onDelete: Cascade)
+  // Candidate        Candidate            @relation(fields: [candidateID], references: [candidateID], onDelete: Cascade)
+  Election_Schedul Election_Schedulling @relation(fields: [electionID], references: [electionID])
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  ketuaID          Int
+  wakilKetuaID     Int?
+  ketua            Candidate            @relation("VoteKetua", fields: [ketuaID], references: [candidateID], onDelete: Cascade)
+  wakilKetua       Candidate?            @relation("VoteWakilKetua", fields: [wakilKetuaID], references: [candidateID], onDelete: Cascade)
+  votePair         String
+
+  // @@unique([userID, candidateID]) // Ensure a user can vote for a candidate only once
+}
+
+model Identity_Verif {
+  identityID Int      @id @default(autoincrement())
+  fullName   String
+  NoKTP      Int?     @unique
+  NoNISN     Int?     @unique
+  NoAnggota  Int?     @unique
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     Int?     @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  PEMILIH
+}
+
+enum Work {
+  PELAJAR
+  MAHASISWA
+  SWASTA
+}
+
+enum Level {
+  ORGANISASI
+  SEKOLAH
+  DESA
+}
+
+enum CandidateRole {
+  RT
+  RW
+  KETUA
+  WAKIL_KETUA
+  NONE
+  PERORANGAN
+}
+
+enum Status {
+  ACTIVE
+  CLOSED
+}
