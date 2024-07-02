@@ -27,6 +27,9 @@ app.use('/public',express.static(path.join(__dirname, 'public'))); // must src/p
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+app.get('/', async (req,res,next) =>  {
+  res.statusCode(200).send('Hello')
+})
 app.use('/api', indexRouter, ErrorHandler);
 app.use('/users', usersRouter);
 
