@@ -3,5 +3,6 @@
 /prisma/migrations
 
 note.txt
-
-.env
+/public/images/candidate
+/public/images/identity_card_pemilih
+/public/images/identity_cards
